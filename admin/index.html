@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Chinese Phrasebook CMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .toast { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .spinner { border: 2px solid #e5e7eb; border-top: 2px solid #dc2626; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.6s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="h-full bg-gray-100">
+
+<!-- ============ LOGIN PAGE ============ -->
+<div id="login-page" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-600 to-red-900">
+    <div class="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-900 mb-2">Admin Panel</h1>
+        <p class="text-center text-gray-500 mb-8">Chinese Phrasebook CMS</p>
+        <form id="login-form" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input type="text" id="login-user" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="login-pass" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition">
+            </div>
+            <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-lg">
+                Sign In
+            </button>
+        </form>
+        <p id="login-error" class="text-red-500 text-sm text-center mt-4 hidden"></p>
+    </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="main-app" class="hidden min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-white flex flex-col flex-shrink-0">
+        <div class="p-6 border-b border-gray-800">
+            <h2 class="text-xl font-bold">Phrasebook CMS</h2>
+            <p class="text-gray-400 text-sm mt-1">Admin Panel v2.0</p>
+        </div>
+        <nav class="flex-1 p-4 space-y-1">
+            <button onclick="showPage('dashboard')" data-nav="dashboard" class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 bg-red-600 hover:bg-red-700 transition font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </button>
+            <button onclick="showPage('categories')" data-nav="categories" class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 text-gray-300 hover:bg-gray-800 transition font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                Categories
+            </button>
+            <button onclick="showPage('phrases')" data-nav="phrases" class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 text-gray-300 hover:bg-gray-800 transition font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Phrases
+            </button>
+            <button onclick="showPage('tts')" data-nav="tts" class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 text-gray-300 hover:bg-gray-800 transition font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                TTS Settings
+            </button>
+        </nav>
+        <div class="p-4 border-t border-gray-800">
+            <button onclick="logout()" class="w-full px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto p-8">
+        <!-- Dashboard -->
+        <div id="page-dashboard" class="page">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+            <div id="stats-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-fadeIn"><p class="text-gray-500 text-sm">Loading...</p></div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div id="page-categories" class="page hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Categories</h1>
+                <button onclick="openCategoryModal()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-lg flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Category
+                </button>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b"><tr><th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Icon</th><th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Name</th><th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Phrases</th><th class="text-left px-6 py-4 text-sm font-semibold text-gray-600">Order</th><th class="text-right px-6 py-4 text-sm font-semibold text-gray-600">Actions</th></tr></thead>
+                    <tbody id="categories-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Phrases -->
+        <div id="page-phrases" class="page hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Phrases</h1>
+                <button onclick="openPhraseModal()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-lg flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Phrase
+                </button>
+            </div>
+            <div class="mb-4">
+                <select id="phrase-category-filter" onchange="loadPhrases()" class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none bg-white">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b"><tr><th class="text-left px-4 py-3 text-sm font-semibold text-gray-600 w-8">#</th><th class="text-left px-4 py-3 text-sm font-semibold text-gray-600">Chinese</th><th class="text-left px-4 py-3 text-sm font-semibold text-gray-600">Pinyin</th><th class="text-left px-4 py-3 text-sm font-semibold text-gray-600">Thai</th><th class="text-center px-4 py-3 text-sm font-semibold text-gray-600 w-20">Audio</th><th class="text-right px-4 py-3 text-sm font-semibold text-gray-600 w-28">Actions</th></tr></thead>
+                        <tbody id="phrases-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TTS Settings -->
+        <div id="page-tts" class="page hidden">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">TTS Settings</h1>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">Voice Configuration</h2>
+                    <form id="tts-settings-form" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Voice</label>
+                            <select id="tts-voice" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none bg-white">
+                                <option value="zh-CN-XiaoxiaoNeural">zh-CN-XiaoxiaoNeural (Female)</option>
+                                <option value="zh-CN-YunxiNeural">zh-CN-YunxiNeural (Male)</option>
+                                <option value="zh-CN-YunjianNeural">zh-CN-YunjianNeural (Male)</option>
+                                <option value="zh-CN-XiaoyiNeural">zh-CN-XiaoyiNeural (Female)</option>
+                                <option value="zh-CN-YunyangNeural">zh-CN-YunyangNeural (Male)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Speech Rate</label>
+                            <select id="tts-rate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none bg-white">
+                                <option value="-20%">-20% (Slowest)</option>
+                                <option value="-10%">-10% (Slower)</option>
+                                <option value="+0%">+0% (Normal)</option>
+                                <option value="+10%">+10% (Faster)</option>
+                                <option value="+20%">+20% (Fastest)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pitch</label>
+                            <select id="tts-pitch" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none bg-white">
+                                <option value="-10Hz">-10Hz (Lower)</option>
+                                <option value="+0Hz">+0Hz (Normal)</option>
+                                <option value="+10Hz">+10Hz (Higher)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-lg">Save Settings</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">Bulk Audio Generation</h2>
+                    <p class="text-gray-500 mb-4">Regenerate all audio files using current voice settings. Missing files will be created, existing files overwritten.</p>
+                    <button onclick="regenerateAllAudio()" id="regen-all-btn" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition shadow-lg">
+                        Regenerate All Audio
+                    </button>
+                    <p id="regen-status" class="text-sm text-gray-500 mt-3 hidden"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Category Modal -->
+<div id="category-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+        <h2 id="category-modal-title" class="text-xl font-bold text-gray-900 mb-6">Add Category</h2>
+        <form id="category-form" class="space-y-4">
+            <input type="hidden" id="cat-edit-id">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input type="text" id="cat-name" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Icon (Emoji)</label>
+                <input type="text" id="cat-icon" required placeholder="💬" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                <input type="number" id="cat-order" value="0" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeCategoryModal()" class="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition">Cancel</button>
+                <button type="submit" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-lg">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Phrase Modal -->
+<div id="phrase-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg mx-4">
+        <h2 id="phrase-modal-title" class="text-xl font-bold text-gray-900 mb-6">Add Phrase</h2>
+        <form id="phrase-form" class="space-y-4">
+            <input type="hidden" id="phrase-edit-id">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select id="phrase-cat" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none bg-white"></select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Chinese Text</label>
+                <input type="text" id="phrase-chinese" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" style="font-family:'Noto Sans SC',sans-serif">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Pinyin</label>
+                <input type="text" id="phrase-pinyin" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Thai Translation</label>
+                <input type="text" id="phrase-thai" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" style="font-family:'Noto Sans Thai',sans-serif">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                <input type="number" id="phrase-order" value="0" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closePhraseModal()" class="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition">Cancel</button>
+                <button type="submit" id="phrase-save-btn" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-lg">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed top-4 right-4 z-[100] bg-gray-900 text-white px-6 py-3 rounded-xl shadow-2xl toast flex items-center gap-3"></div>
+
+<script>
+const API = 'http://localhost:8000/api';
+let token = localStorage.getItem('admin_token');
+let currentPage = 'dashboard';
+
+function api(path, opts = {}) {
+    const headers = opts.headers || {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (!(opts.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    return fetch(`${API}${path}`, { ...opts, headers }).then(r => {
+        if (r.status === 401) { logout(); throw new Error('Session expired'); }
+        if (r.status === 204) return null;
+        return r.json();
+    });
+}
+
+function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.className = `fixed top-4 right-4 z-[100] px-6 py-3 rounded-xl shadow-2xl toast flex items-center gap-3 ${type === 'error' ? 'bg-red-600' : 'bg-gray-900'} text-white`;
+    el.innerHTML = `<span>${type === 'error' ? '❌' : '✅'}</span> ${msg}`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+// === AUTH ===
+document.getElementById('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const errEl = document.getElementById('login-error');
+    errEl.classList.add('hidden');
+    try {
+        const r = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+                username: document.getElementById('login-user').value,
+                password: document.getElementById('login-pass').value,
+            }),
+        });
+        if (r.access_token) {
+            token = r.access_token;
+            localStorage.setItem('admin_token', token);
+            showMainApp();
+        } else {
+            errEl.textContent = 'Invalid credentials';
+            errEl.classList.remove('hidden');
+        }
+    } catch (ex) {
+        errEl.textContent = 'Login failed. Check server connection.';
+        errEl.classList.remove('hidden');
+    }
+});
+
+function logout() {
+    token = null;
+    localStorage.removeItem('admin_token');
+    document.getElementById('main-app').classList.add('hidden');
+    document.getElementById('login-page').classList.remove('hidden');
+}
+
+function showMainApp() {
+    document.getElementById('login-page').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    showPage('dashboard');
+}
+
+function showPage(page) {
+    currentPage = page;
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`page-${page}`).classList.remove('hidden');
+    document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.remove('bg-red-600', 'hover:bg-red-700');
+        b.classList.add('text-gray-300', 'hover:bg-gray-800');
+    });
+    const navBtn = document.querySelector(`[data-nav="${page}"]`);
+    if (navBtn) {
+        navBtn.classList.remove('text-gray-300', 'hover:bg-gray-800');
+        navBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+    }
+    if (page === 'dashboard') loadDashboard();
+    if (page === 'categories') loadCategories();
+    if (page === 'phrases') loadPhrases();
+    if (page === 'tts') loadTTSSettings();
+}
+
+// === DASHBOARD ===
+async function loadDashboard() {
+    try {
+        const stats = await api('/analytics/dashboard');
+        const grid = document.getElementById('stats-grid');
+        grid.innerHTML = `
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <p class="text-gray-500 text-sm font-medium">Total Categories</p>
+                <p class="text-4xl font-bold text-gray-900 mt-2">${stats.total_categories}</p>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <p class="text-gray-500 text-sm font-medium">Total Phrases</p>
+                <p class="text-4xl font-bold text-gray-900 mt-2">${stats.total_phrases}</p>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <p class="text-gray-500 text-sm font-medium">Total Page Views</p>
+                <p class="text-4xl font-bold text-gray-900 mt-2">${stats.total_page_views}</p>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <p class="text-gray-500 text-sm font-medium">Today's Views</p>
+                <p class="text-4xl font-bold text-gray-900 mt-2">${stats.today_views}</p>
+            </div>
+            <div class="bg-green-50 rounded-2xl p-6 shadow-sm border border-green-100">
+                <p class="text-green-700 text-sm font-medium">Phrases with Audio</p>
+                <p class="text-4xl font-bold text-green-800 mt-2">${stats.phrases_with_audio}</p>
+            </div>
+            <div class="bg-red-50 rounded-2xl p-6 shadow-sm border border-red-100">
+                <p class="text-red-700 text-sm font-medium">Missing Audio</p>
+                <p class="text-4xl font-bold text-red-800 mt-2">${stats.phrases_missing_audio}</p>
+            </div>
+        `;
+    } catch (e) { toast('Failed to load dashboard', 'error'); }
+}
+
+// === CATEGORIES ===
+async function loadCategories() {
+    try {
+        const cats = await api('/categories/');
+        const tbody = document.getElementById('categories-table');
+        tbody.innerHTML = cats.map(c => `
+            <tr class="border-b hover:bg-gray-50 transition">
+                <td class="px-6 py-4 text-2xl">${c.icon}</td>
+                <td class="px-6 py-4 font-medium text-gray-900">${c.name}</td>
+                <td class="px-6 py-4 text-gray-500">${c.phrase_count}</td>
+                <td class="px-6 py-4 text-gray-500">${c.sort_order}</td>
+                <td class="px-6 py-4 text-right">
+                    <button onclick="editCategory(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.icon}', ${c.sort_order})" class="text-blue-600 hover:text-blue-800 font-medium mr-3">Edit</button>
+                    <button onclick="deleteCategory(${c.id})" class="text-red-600 hover:text-red-800 font-medium">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) { toast('Failed to load categories', 'error'); }
+}
+
+function openCategoryModal() {
+    document.getElementById('category-modal-title').textContent = 'Add Category';
+    document.getElementById('cat-edit-id').value = '';
+    document.getElementById('cat-name').value = '';
+    document.getElementById('cat-icon').value = '';
+    document.getElementById('cat-order').value = '0';
+    document.getElementById('category-modal').classList.remove('hidden');
+}
+
+function editCategory(id, name, icon, order) {
+    document.getElementById('category-modal-title').textContent = 'Edit Category';
+    document.getElementById('cat-edit-id').value = id;
+    document.getElementById('cat-name').value = name;
+    document.getElementById('cat-icon').value = icon;
+    document.getElementById('cat-order').value = order;
+    document.getElementById('category-modal').classList.remove('hidden');
+}
+
+function closeCategoryModal() {
+    document.getElementById('category-modal').classList.add('hidden');
+}
+
+document.getElementById('category-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = document.getElementById('cat-edit-id').value;
+    const body = {
+        name: document.getElementById('cat-name').value,
+        icon: document.getElementById('cat-icon').value,
+        sort_order: parseInt(document.getElementById('cat-order').value) || 0,
+    };
+    try {
+        if (id) {
+            await api(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+            toast('Category updated');
+        } else {
+            await api('/categories/', { method: 'POST', body: JSON.stringify(body) });
+            toast('Category created');
+        }
+        closeCategoryModal();
+        loadCategories();
+    } catch (e) { toast('Failed to save category', 'error'); }
+});
+
+async function deleteCategory(id) {
+    if (!confirm('Delete this category and ALL its phrases? This cannot be undone.')) return;
+    try {
+        await api(`/categories/${id}`, { method: 'DELETE' });
+        toast('Category deleted');
+        loadCategories();
+    } catch (e) { toast('Failed to delete category', 'error'); }
+}
+
+// === PHRASES ===
+async function loadPhrases() {
+    try {
+        const catId = document.getElementById('phrase-category-filter').value;
+        const qs = catId ? `?category_id=${catId}` : '';
+        const phrases = await api(`/phrases/${qs}`);
+
+        const cats = await api('/categories/');
+        const filter = document.getElementById('phrase-category-filter');
+        if (filter.options.length <= 1) {
+            filter.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+        }
+
+        const catSelect = document.getElementById('phrase-cat');
+        catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+
+        const tbody = document.getElementById('phrases-table');
+        tbody.innerHTML = phrases.map(p => `
+            <tr class="border-b hover:bg-gray-50 transition">
+                <td class="px-4 py-3 text-sm text-gray-400">${p.id}</td>
+                <td class="px-4 py-3"><span style="font-family:'Noto Sans SC',sans-serif" class="text-gray-900 font-medium">${p.chinese}</span></td>
+                <td class="px-4 py-3 text-sm text-red-600">${p.pinyin}</td>
+                <td class="px-4 py-3 text-sm text-gray-600" style="font-family:'Noto Sans Thai',sans-serif">${p.thai}</td>
+                <td class="px-4 py-3 text-center">
+                    <span id="audio-status-${p.id}" class="inline-flex items-center gap-1">
+                        ${p.audio_file
+                            ? '<span class="text-green-500 text-lg">&#x2705;</span><span class="text-xs text-green-600">OK</span>'
+                            : '<span class="text-red-500 text-lg">&#x26A0;&#xFE0F;</span><span class="text-xs text-red-600">Missing</span>'}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                    <button onclick="regeneratePhraseAudio(${p.id})" class="text-purple-600 hover:text-purple-800 text-xs font-medium mr-2" title="Regenerate Audio">&#x1F502;</button>
+                    <button onclick="editPhrase(${p.id}, ${p.category_id}, '${p.chinese.replace(/'/g, "\\'")}', '${p.pinyin.replace(/'/g, "\\'")}', '${p.thai.replace(/'/g, "\\'")}', ${p.sort_order})" class="text-blue-600 hover:text-blue-800 text-xs font-medium mr-1">Edit</button>
+                    <button onclick="deletePhrase(${p.id})" class="text-red-600 hover:text-red-800 text-xs font-medium">Del</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) { toast('Failed to load phrases', 'error'); }
+}
+
+function openPhraseModal() {
+    document.getElementById('phrase-modal-title').textContent = 'Add Phrase';
+    document.getElementById('phrase-edit-id').value = '';
+    document.getElementById('phrase-chinese').value = '';
+    document.getElementById('phrase-pinyin').value = '';
+    document.getElementById('phrase-thai').value = '';
+    document.getElementById('phrase-order').value = '0';
+    document.getElementById('phrase-modal').classList.remove('hidden');
+}
+
+function editPhrase(id, catId, chinese, pinyin, thai, order) {
+    document.getElementById('phrase-modal-title').textContent = 'Edit Phrase';
+    document.getElementById('phrase-edit-id').value = id;
+    document.getElementById('phrase-cat').value = catId;
+    document.getElementById('phrase-chinese').value = chinese;
+    document.getElementById('phrase-pinyin').value = pinyin;
+    document.getElementById('phrase-thai').value = thai;
+    document.getElementById('phrase-order').value = order;
+    document.getElementById('phrase-modal').classList.remove('hidden');
+}
+
+function closePhraseModal() {
+    document.getElementById('phrase-modal').classList.add('hidden');
+}
+
+document.getElementById('phrase-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = document.getElementById('phrase-edit-id').value;
+    const saveBtn = document.getElementById('phrase-save-btn');
+    const body = {
+        chinese: document.getElementById('phrase-chinese').value,
+        pinyin: document.getElementById('phrase-pinyin').value,
+        thai: document.getElementById('phrase-thai').value,
+        category_id: parseInt(document.getElementById('phrase-cat').value),
+        sort_order: parseInt(document.getElementById('phrase-order').value) || 0,
+    };
+    try {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner mr-2"></span> Saving...';
+        if (id) {
+            await api(`/phrases/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+            toast('Phrase updated');
+        } else {
+            await api('/phrases/', { method: 'POST', body: JSON.stringify(body) });
+            toast('Phrase created');
+        }
+        closePhraseModal();
+        loadPhrases();
+    } catch (e) { toast('Failed to save phrase', 'error'); }
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = 'Save';
+});
+
+async function deletePhrase(id) {
+    if (!confirm('Delete this phrase?')) return;
+    try {
+        await api(`/phrases/${id}`, { method: 'DELETE' });
+        toast('Phrase deleted');
+        loadPhrases();
+    } catch (e) { toast('Failed to delete phrase', 'error'); }
+}
+
+async function regeneratePhraseAudio(id) {
+    const statusEl = document.getElementById(`audio-status-${id}`);
+    statusEl.innerHTML = '<span class="spinner"></span>';
+    try {
+        const r = await api(`/audio/regenerate/${id}`, { method: 'POST' });
+        if (r.has_audio) {
+            statusEl.innerHTML = '<span class="text-green-500 text-lg">&#x2705;</span><span class="text-xs text-green-600">OK</span>';
+            toast('Audio regenerated');
+        } else {
+            statusEl.innerHTML = '<span class="text-red-500 text-lg">&#x26A0;&#xFE0F;</span><span class="text-xs text-red-600">Missing</span>';
+            toast('Audio regeneration failed', 'error');
+        }
+    } catch (e) {
+        statusEl.innerHTML = '<span class="text-red-500 text-lg">&#x26A0;&#xFE0F;</span><span class="text-xs text-red-600">Missing</span>';
+        toast('Audio regeneration failed', 'error');
+    }
+}
+
+async function regenerateAllAudio() {
+    const btn = document.getElementById('regen-all-btn');
+    const statusEl = document.getElementById('regen-status');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner mr-2"></span> Generating...';
+    statusEl.classList.remove('hidden');
+    statusEl.textContent = 'Processing... this may take several minutes.';
+    try {
+        const r = await api('/audio/regenerate-all', { method: 'POST' });
+        statusEl.textContent = `Done! ${r.generated} generated, ${r.errors} errors out of ${r.total} total.`;
+        toast(`Generated ${r.generated} audio files`);
+    } catch (e) {
+        statusEl.textContent = 'Generation failed.';
+        toast('Failed to regenerate all audio', 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Regenerate All Audio';
+}
+
+// === TTS SETTINGS ===
+async function loadTTSSettings() {
+    try {
+        const s = await api('/audio/settings');
+        document.getElementById('tts-voice').value = s.voice;
+        document.getElementById('tts-rate').value = s.rate;
+        document.getElementById('tts-pitch').value = s.pitch;
+    } catch (e) { toast('Failed to load TTS settings', 'error'); }
+}
+
+document.getElementById('tts-settings-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+        await api('/audio/settings', {
+            method: 'PUT',
+            body: JSON.stringify({
+                voice: document.getElementById('tts-voice').value,
+                rate: document.getElementById('tts-rate').value,
+                pitch: document.getElementById('tts-pitch').value,
+            }),
+        });
+        toast('TTS settings saved');
+    } catch (e) { toast('Failed to save settings', 'error'); }
+});
+
+// === CLOSE MODALS ON OUTSIDE CLICK ===
+document.getElementById('category-modal').addEventListener('click', function(e) { if (e.target === this) closeCategoryModal(); });
+document.getElementById('phrase-modal').addEventListener('click', function(e) { if (e.target === this) closePhraseModal(); });
+
+// === INIT ===
+if (token) {
+    api('/health').then(r => {
+        if (r && r.status === 'ok') showMainApp();
+        else logout();
+    }).catch(() => logout());
+}
+</script>
+</body>
+</html>
